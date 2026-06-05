@@ -33,16 +33,20 @@ public class AuthenticationMiddleware
             var userNameString = System.Text.Encoding.UTF8.GetString(userNameBytes);
 
             userNameString = userNameString.Split('=')[0];
-            
+
             var claim = new Claim(ClaimTypes.Name, userNameString);
-            var claims = new ClaimsIdentity();
-            claims.AddClaim(claim);
-            
-            var identity = new ClaimsIdentity(claims);
+            var claims = new List<Claim>()
+            {
+                claim
+            };
+            var identity = new ClaimsIdentity(claims, AuthenticationConstants.AuthenticationCookieSchema);
+            identity.AddClaim(claim);
+
             var principal = new ClaimsPrincipal(identity);
 
             context.User = principal;
         }
+
 
         await _next(context);
     }

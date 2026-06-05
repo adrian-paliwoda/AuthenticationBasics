@@ -2,7 +2,7 @@ namespace AuthenticationBasicsApp.Services;
 
 public interface IAuthenticationService
 {
-    void SignIn();
-    void SignOut();
+    Task SignIn();
+    Task SignOut();
     string UserName();
 }

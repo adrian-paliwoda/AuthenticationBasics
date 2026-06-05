@@ -1,4 +1,6 @@
 using AuthenticationBasicsApp.Middlewares;
+using AuthenticationBasicsApp.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using AuthenticationService = AuthenticationBasicsApp.Services.AuthenticationService;
 using IAuthenticationService = AuthenticationBasicsApp.Services.IAuthenticationService;
@@ -6,6 +8,10 @@ using IAuthenticationService = AuthenticationBasicsApp.Services.IAuthenticationS
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services
+    .AddAuthentication(AuthenticationConstants.AuthenticationCookieSchema)
+    .AddCookie(AuthenticationConstants.AuthenticationCookieSchema);
+
 builder.Services.AddDataProtection();
 builder.Services.AddHttpContextAccessor();
 builder.Services.TryAddScoped<IAuthenticationService, AuthenticationService>();
@@ -26,8 +32,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
-
-app.UseAuthenticationMiddleware();
 
 app.UseAuthorization();
 

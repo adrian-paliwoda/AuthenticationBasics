@@ -1,43 +1,63 @@
 using System.Security.Claims;
 using AuthenticationBasicsApp.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace AuthenticationBasicsApp.Services;
 
 public class AuthenticationService : IAuthenticationService
 {
-    private readonly IDataProtectionProvider _dataProtectionProvider;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AuthenticationService(IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor)
     {
-        _dataProtectionProvider = dataProtectionProvider;
         _httpContextAccessor = httpContextAccessor;
     }
     
-    public void SignIn()
+    public async Task SignIn()
     {
-        var auth = "user:adrian";
+        var context = _httpContextAccessor.HttpContext;
+        if (context == null)
+        {
+            return;
+        }
         
-        var authBytes = System.Text.Encoding.UTF8.GetBytes(auth);
-        var authBase64 = Convert.ToBase64String(authBytes);
+        var userName = "adrian";
         
-        var authProtected = _dataProtectionProvider
-            .CreateProtector(AuthenticationConstants.AuthenticationCookieDataProtectionName)
-            .Protect(authBase64);
-        
-        _httpContextAccessor.HttpContext?.Response.Cookies.Append("auth", authProtected);
+        var claim = new Claim(ClaimTypes.Name, userName);
+        var claims = new List<Claim>()
+        {
+            claim
+        };
+        var identity = new ClaimsIdentity(claims, AuthenticationConstants.AuthenticationCookieSchema);
+        identity.AddClaim(claim);
+
+        var principal = new ClaimsPrincipal(identity);
+
+        await context.SignInAsync(AuthenticationConstants.AuthenticationCookieSchema, principal);
     }
 
-    public void SignOut()
+    public async Task SignOut()
     {
-        var auth = "user:adrian";
-        _httpContextAccessor.HttpContext?.Response.Cookies.Delete(auth);
+        var context = _httpContextAccessor.HttpContext;
+        if (context == null)
+        {
+            return;
+        }
+        
+        await context.SignOutAsync(AuthenticationConstants.AuthenticationCookieSchema);
     }
 
     public string UserName()
     {
-        var userName = _httpContextAccessor.HttpContext?.User.Identities.FirstOrDefault()?.FindFirst(ClaimTypes.Name)?.Value;
+        var context = _httpContextAccessor.HttpContext;
+        if (context == null)
+        {
+            return string.Empty;
+        }
+
+        var userName = context.User.FindFirst(ClaimTypes.Name)?.Value;
+        
 
         return userName ?? string.Empty;
     }
