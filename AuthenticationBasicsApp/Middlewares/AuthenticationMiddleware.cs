@@ -14,7 +14,7 @@ public class AuthenticationMiddleware
         _next = next;
     }
 
-    public async Task Invoke(HttpContext context)
+    public async Task InvokeAsync(HttpContext context)
     {
         var dataProtectionProvider = context.RequestServices.GetService<IDataProtectionProvider>();
         if (dataProtectionProvider == null)

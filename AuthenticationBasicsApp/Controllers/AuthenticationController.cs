@@ -1,6 +1,5 @@
 using AuthenticationBasicsApp.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthenticationBasicsApp.Controllers;
@@ -11,7 +10,6 @@ namespace AuthenticationBasicsApp.Controllers;
 public class AuthenticationController : ControllerBase
 {
     private readonly IAuthenticationService _authenticationService;
-    IDataProtectionProvider _dataProtectionProvider;
 
     public AuthenticationController(IAuthenticationService authenticationService)
     {
@@ -38,7 +36,7 @@ public class AuthenticationController : ControllerBase
         return Ok();
     }
 
-    [HttpPost("logout")]
+    [HttpGet("logout")]
     public IActionResult Logout()
     {
         _authenticationService.SignOut();
