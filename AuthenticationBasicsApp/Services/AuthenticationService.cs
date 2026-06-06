@@ -26,6 +26,9 @@ public class AuthenticationService : IAuthenticationService
         var claims = new List<Claim>()
         {
             new Claim(ClaimTypes.Name, userName),
+            new Claim(ClaimTypes.Role, "admin"),
+            new Claim(ClaimTypes.Role, "manager"),
+            new Claim(ClaimTypes.Role, "user"),
             new Claim(AuthenticationConstants.Passport, "eu"),
             new Claim(AuthenticationConstants.Passport, "nor"),
         };

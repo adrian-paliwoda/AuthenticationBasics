@@ -75,5 +75,12 @@ public class TravelController : ControllerBase
         return BadRequest("There is no access to USA");
     }
     
+    [Authorize(AuthenticationSchemes = AuthenticationConstants.AuthenticationCookieSchema, Policy = "eu passport")]
+    [Authorize(AuthenticationSchemes = AuthenticationConstants.AuthenticationCookieSchema, Roles = "manager")]
+    [HttpGet("Poland")]
+    public IActionResult Poland()
+    {
+        return Ok("You are in Poland");
+    }
 
 }
