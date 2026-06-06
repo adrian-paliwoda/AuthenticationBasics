@@ -13,8 +13,22 @@ builder.Services
     .AddCookie(AuthenticationConstants.AuthenticationCookieSchema)
     .AddCookie(AuthenticationConstants.AuthenticationCookieSchema2);
 
-builder.Services.AddAuthorization();
-
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("eu passport", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddAuthenticationSchemes(AuthenticationConstants.AuthenticationCookieSchema);
+        policy.RequireClaim(AuthenticationConstants.Passport, "eu");
+    });
+    
+    options.AddPolicy("usa", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddAuthenticationSchemes(AuthenticationConstants.AuthenticationCookieSchema2);
+        policy.RequireClaim(AuthenticationConstants.Visa, "usa");
+    });
+});
 
 builder.Services.AddDataProtection();
 builder.Services.AddHttpContextAccessor();
@@ -39,7 +53,7 @@ app.UseHttpsRedirection();
 app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
 app.UseAuthentication();
-app.UseCustomAuthorizationMiddleware();
+app.UseAuthorization();
 
 app.MapControllers();
 

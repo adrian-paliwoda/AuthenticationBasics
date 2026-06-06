@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace AuthenticationBasicsApp.Controllers;
 
 [ApiController]
-[AllowAnonymous]
 [Route("api/[controller]")]
 public class TravelController : ControllerBase
 {
@@ -19,6 +18,7 @@ public class TravelController : ControllerBase
         _httpContext = httpContextAccessor.HttpContext ?? throw new ArgumentNullException(nameof(httpContextAccessor));
     }
     
+    [Authorize(AuthenticationSchemes = AuthenticationConstants.AuthenticationCookieSchema, Policy = "eu passport")]
     [HttpGet("sweden")]
     public IActionResult Sweden()
     {
@@ -37,6 +37,7 @@ public class TravelController : ControllerBase
         return BadRequest("There is no access to sweden");
     }
 
+    [Authorize(AuthenticationSchemes = AuthenticationConstants.AuthenticationCookieSchema, Policy = "eu passport")]
     [HttpGet("nor")]
     public IActionResult Norway()
     {
@@ -55,6 +56,7 @@ public class TravelController : ControllerBase
         return BadRequest("There is no access to Norway");
     }
 
+    [Authorize(AuthenticationSchemes = AuthenticationConstants.AuthenticationCookieSchema2, Policy = "usa")]
     [HttpGet("usa")]
     public IActionResult Usa()
     {
