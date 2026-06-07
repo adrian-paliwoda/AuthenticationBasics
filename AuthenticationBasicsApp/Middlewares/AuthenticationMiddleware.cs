@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using AuthenticationBasicsApp.Models;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace AuthenticationBasicsApp.Middlewares;

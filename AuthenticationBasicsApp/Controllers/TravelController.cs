@@ -82,5 +82,12 @@ public class TravelController : ControllerBase
     {
         return Ok("You are in Poland");
     }
+    
+    [Authorize(AuthenticationSchemes = AuthenticationConstants.AuthenticationCookieSchema, Roles = "china")]
+    [HttpGet("China")]
+    public IActionResult China()
+    {
+        return Ok("You are in China");
+    }
 
 }

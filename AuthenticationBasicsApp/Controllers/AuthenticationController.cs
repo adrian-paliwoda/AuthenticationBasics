@@ -1,3 +1,4 @@
+using AuthenticationBasicsApp.Models;
 using AuthenticationBasicsApp.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +33,17 @@ public class AuthenticationController : ControllerBase
     [HttpGet("login")]
     public IActionResult Login()
     {
-        _authenticationService.SignIn();
+        return Login(new Credential
+        {
+            UserName = "adrian",
+            Password ="test"
+        });
+    }
+    
+    [HttpPost("login")]
+    public IActionResult Login([FromBody] Credential credential)
+    {
+        _authenticationService.SignIn(credential.UserName, credential.Password);
         return Ok();
     }
 
