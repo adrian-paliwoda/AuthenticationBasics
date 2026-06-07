@@ -67,11 +67,6 @@ public class AuthenticationService : IAuthenticationService
             return;
         }
 
-        if (!await _userManager.CheckPasswordAsync(user, password))
-        {
-            return;
-        }
-
         var result = await _signInManager.PasswordSignInAsync(user.UserName!, password, false, false);
         if (!result.Succeeded)
         {
