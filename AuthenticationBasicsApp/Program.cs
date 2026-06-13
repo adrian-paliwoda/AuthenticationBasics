@@ -46,10 +46,12 @@ builder.Services
         options.ClientId = builder.Configuration["OAuth:ClientId"] ?? "id";
         options.ClientSecret = builder.Configuration["OAuth:ClientSecret"] ?? "secret";
 
-        // The three endpoints MUST be distinct and serve their respective roles.
-        options.AuthorizationEndpoint = "https://oauth-mock.mock.beeceptor.com/authorize";
-        options.TokenEndpoint = "https://oauth-mock.mock.beeceptor.com/oauth/token";
-        options.UserInformationEndpoint = "https://oauth-mock.mock.beeceptor.com/userinfo";
+        // Hosted mock OAuth2 provider (kogiqa) using Google-style paths, which
+        // return a JSON token response. Its /authorize redirects back to redirect_uri
+        // with code + echoed state, so the auth-code flow completes against localhost.
+        options.AuthorizationEndpoint = "https://oauth.kogiqa.com/o/oauth2/v2/auth";
+        options.TokenEndpoint = "https://oauth.kogiqa.com/oauth2/v4/token";
+        options.UserInformationEndpoint = "https://oauth.kogiqa.com/oauth2/v3/userinfo";
 
         // Must match the redirect URI the provider/mock sends the browser back to,
         // and must NOT collide with an MVC route. "/signin-oauth" is the conventional default.
@@ -62,7 +64,7 @@ builder.Services
         options.UsePkce = true;          // PKCE — recommended for the auth-code flow
 
         // Map user-info JSON fields onto claims (runs during OnCreatingTicket).
-        options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
+        options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub");
         options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
         options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
 
