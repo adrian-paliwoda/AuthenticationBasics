@@ -1,7 +1,13 @@
+using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text.Json;
+using AuthenticationBasicsApp.AuthenticationHandlers;
 using AuthenticationBasicsApp.Models;
 using AuthenticationBasicsApp.Services;
 using AuthenticationBasicsApp.UserStore;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using AuthenticationService = AuthenticationBasicsApp.Services.AuthenticationService;
@@ -17,7 +23,9 @@ builder.Services.AddIdentityCore<IdentityUser>(opt =>
     opt.Password.RequireUppercase = false;
     opt.Password.RequireLowercase = false;
     opt.Password.RequiredLength = 4;
-});
+})
+.AddSignInManager();
+
 builder.Services.TryAddSingleton<IUserStore<IdentityUser>, InMemoryUserStore>();
 // override the default UPPERCASE normalizer so roles/usernames keep their original casing
 builder.Services.AddSingleton<ILookupNormalizer, NoOpLookupNormalizer>();
@@ -25,7 +33,58 @@ builder.Services.AddSingleton<ILookupNormalizer, NoOpLookupNormalizer>();
 builder.Services
     .AddAuthentication(AuthenticationConstants.AuthenticationCookieSchema)
     .AddCookie(AuthenticationConstants.AuthenticationCookieSchema)
-    .AddCookie(AuthenticationConstants.AuthenticationCookieSchema2);
+    .AddCookie(AuthenticationConstants.AuthenticationCookieSchema2)
+    .AddCookie(AuthenticationConstants.AuthenticationCookieSchema3)
+    .AddScheme<CookieAuthenticationOptions, VisitorAuthHandler>(AuthenticationConstants.AuthenticationCookieVisitor, options => { })
+    .AddOAuth(AuthenticationConstants.AuthenticationOAuth, options =>
+    {
+        // Where the OAuth handler persists the authenticated principal after callback.
+        // Schema3 is a registered cookie scheme, so this is correct.
+        options.SignInScheme = AuthenticationConstants.AuthenticationCookieSchema3;
+
+        // Credentials — pull from configuration/user-secrets instead of hardcoding.
+        options.ClientId = builder.Configuration["OAuth:ClientId"] ?? "id";
+        options.ClientSecret = builder.Configuration["OAuth:ClientSecret"] ?? "secret";
+
+        // The three endpoints MUST be distinct and serve their respective roles.
+        options.AuthorizationEndpoint = "https://oauth-mock.mock.beeceptor.com/authorize";
+        options.TokenEndpoint = "https://oauth-mock.mock.beeceptor.com/oauth/token";
+        options.UserInformationEndpoint = "https://oauth-mock.mock.beeceptor.com/userinfo";
+
+        // Must match the redirect URI the provider/mock sends the browser back to,
+        // and must NOT collide with an MVC route. "/signin-oauth" is the conventional default.
+        options.CallbackPath = "/signin-oauth";
+
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+
+        options.SaveTokens = true;       // keep access/refresh tokens in auth properties
+        options.UsePkce = true;          // PKCE — recommended for the auth-code flow
+
+        // Map user-info JSON fields onto claims (runs during OnCreatingTicket).
+        options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
+        options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+        options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+
+        // After the token is obtained, call the user-info endpoint and let the
+        // ClaimActions above populate the identity from the returned JSON.
+        options.Events = new OAuthEvents
+        {
+            OnCreatingTicket = async ctx =>
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, ctx.Options.UserInformationEndpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ctx.AccessToken);
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                using var response = await ctx.Backchannel.SendAsync(
+                    request, HttpCompletionOption.ResponseHeadersRead, ctx.HttpContext.RequestAborted);
+                response.EnsureSuccessStatusCode();
+
+                using var user = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                ctx.RunClaimActions(user.RootElement);
+            }
+        };
+    });
 
 builder.Services.AddAuthorization(options =>
 {
@@ -35,12 +94,25 @@ builder.Services.AddAuthorization(options =>
         policy.AddAuthenticationSchemes(AuthenticationConstants.AuthenticationCookieSchema);
         policy.RequireClaim(AuthenticationConstants.Passport, "eu");
     });
-    
+
     options.AddPolicy("usa", policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.AddAuthenticationSchemes(AuthenticationConstants.AuthenticationCookieSchema2);
         policy.RequireClaim(AuthenticationConstants.Visa, "usa");
+    });
+
+    options.AddPolicy("customer", policy =>
+    {
+        policy.AddAuthenticationSchemes(AuthenticationConstants.AuthenticationCookieSchema,
+                AuthenticationConstants.AuthenticationCookieVisitor)
+            .RequireAuthenticatedUser();
+    });
+    
+    options.AddPolicy("user", policy =>
+    {
+        policy.AddAuthenticationSchemes(AuthenticationConstants.AuthenticationCookieSchema)
+            .RequireAuthenticatedUser();
     });
 });
 
@@ -66,7 +138,7 @@ using (var scope = app.Services.CreateScope())
         var userName = "adrian";
         var email = "adrian@test.com";
         var password = "test";
-    
+
         if (await userManager.FindByNameAsync(userName) is null)
         {
             var user = new IdentityUser()
@@ -76,14 +148,14 @@ using (var scope = app.Services.CreateScope())
                 EmailConfirmed = true,
                 PhoneNumberConfirmed = true,
             };
-            
+
             var result = await userManager.CreateAsync(user, password);
             if (!result.Succeeded)
             {
                 throw new Exception("Seeding user failed: " +
-                    string.Join("; ", result.Errors.Select(e => e.Description)));
+                                    string.Join("; ", result.Errors.Select(e => e.Description)));
             }
-            
+
             var claims = new List<Claim>()
             {
                 new Claim(ClaimTypes.Name, userName),
@@ -93,7 +165,7 @@ using (var scope = app.Services.CreateScope())
                 new Claim(AuthenticationConstants.Passport, "eu"),
                 new Claim(AuthenticationConstants.Passport, "nor"),
             };
-            
+
             await userManager.AddToRolesAsync(user, new[] { "user", "admin", "manager" });
             await userManager.AddClaimsAsync(user, claims);
         }
@@ -101,10 +173,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi();
-    }
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
 
 app.UseHttpsRedirection();

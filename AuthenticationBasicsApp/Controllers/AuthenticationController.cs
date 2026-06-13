@@ -1,12 +1,12 @@
 using AuthenticationBasicsApp.Models;
-using AuthenticationBasicsApp.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using IAuthenticationService = AuthenticationBasicsApp.Services.IAuthenticationService;
 
 namespace AuthenticationBasicsApp.Controllers;
 
 [ApiController]
-[AllowAnonymous]
 [Route("api/auth")]
 public class AuthenticationController : ControllerBase
 {
@@ -18,6 +18,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpGet("username")]
+    [AllowAnonymous]
     public ActionResult UserName()
     {
         var userName = _authenticationService.UserName();
@@ -31,6 +32,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpGet("login")]
+    [AllowAnonymous]
     public IActionResult Login()
     {
         return Login(new Credential
@@ -39,8 +41,18 @@ public class AuthenticationController : ControllerBase
             Password ="test"
         });
     }
+
+    [HttpGet("loginex")]
+    [Authorize(Policy = "user")]
+    public IActionResult LoginExternal()
+    {
+        return Challenge(
+            new AuthenticationProperties { RedirectUri = "/api/travel/world" },
+            AuthenticationConstants.AuthenticationOAuth);
+    }
     
     [HttpPost("login")]
+    [AllowAnonymous]
     public IActionResult Login([FromBody] Credential credential)
     {
         _authenticationService.SignIn(credential.UserName, credential.Password);
@@ -48,6 +60,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpGet("logout")]
+    [AllowAnonymous]
     public IActionResult Logout()
     {
         _authenticationService.SignOut();

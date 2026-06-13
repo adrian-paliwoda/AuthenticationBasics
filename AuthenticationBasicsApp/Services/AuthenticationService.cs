@@ -67,13 +67,13 @@ public class AuthenticationService : IAuthenticationService
             return;
         }
 
-        var result = await _signInManager.PasswordSignInAsync(user.UserName!, password, false, false);
+
+        var result = await _signInManager.CheckPasswordSignInAsync(user, password, false);
         if (!result.Succeeded)
         {
             return;
         }
         
-        // the store is the source of truth: read roles + claims back from it
         var roles = await _userManager.GetRolesAsync(user);
         var storedClaims = await _userManager.GetClaimsAsync(user);
         
@@ -94,12 +94,15 @@ public class AuthenticationService : IAuthenticationService
  
         var identity = new ClaimsIdentity(claims, AuthenticationConstants.AuthenticationCookieSchema);
         var identity2 = new ClaimsIdentity(claims2, AuthenticationConstants.AuthenticationCookieSchema2);
+        var identity3 = new ClaimsIdentity(claims2, AuthenticationConstants.AuthenticationCookieVisitor);
 
         var principal = new ClaimsPrincipal(identity);
         var principal2 = new ClaimsPrincipal(identity2);
+        var principal3 = new ClaimsPrincipal(identity3);
 
         await context.SignInAsync(AuthenticationConstants.AuthenticationCookieSchema, principal);
         await context.SignInAsync(AuthenticationConstants.AuthenticationCookieSchema2, principal2);
+        await context.SignInAsync(AuthenticationConstants.AuthenticationCookieVisitor, principal3);
     }
 
     public async Task SignOut()

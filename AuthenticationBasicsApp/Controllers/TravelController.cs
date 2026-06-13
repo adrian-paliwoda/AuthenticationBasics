@@ -89,5 +89,19 @@ public class TravelController : ControllerBase
     {
         return Ok("You are in China");
     }
+    
+    [Authorize(Policy = "customer")]
+    [HttpGet("Local")]
+    public IActionResult Local()
+    {
+        return Ok("You are locally");
+    }
+    
+    [Authorize(Policy = "user")]
+    [HttpGet("world")]
+    public async Task<IActionResult> World()
+    {
+        return Ok("You are my World");
+    }
 
 }
