@@ -26,6 +26,9 @@ builder.Services.AddIdentityCore<IdentityUser>(opt =>
 })
 .AddSignInManager();
 
+builder.Services.TryAddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.TryAddSingleton<Database>();
+
 builder.Services.TryAddSingleton<IUserStore<IdentityUser>, InMemoryUserStore>();
 // override the default UPPERCASE normalizer so roles/usernames keep their original casing
 builder.Services.AddSingleton<ILookupNormalizer, NoOpLookupNormalizer>();
