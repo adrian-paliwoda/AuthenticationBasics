@@ -1,3 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 
-public class MyRequirement : IAuthorizationRequirement;
+namespace AuthenticationBasicsApp.AuthRequirement;
+
+public abstract class MyRequirement : IAuthorizationRequirement;

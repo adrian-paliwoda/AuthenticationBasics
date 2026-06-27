@@ -24,8 +24,8 @@ public class VisitorAuthHandler : CookieAuthenticationHandler
 
         var claims = new List<Claim>()
         {
-            new Claim(ClaimsIdentity.DefaultNameClaimType, "Visitor"),
-            new Claim(ClaimsIdentity.DefaultRoleClaimType, "Visitor"),
+            new(ClaimsIdentity.DefaultNameClaimType, "Visitor"),
+            new(ClaimsIdentity.DefaultRoleClaimType, "Visitor"),
         };
 
         var identity = new ClaimsIdentity(claims, AuthenticationConstants.AuthenticationCookieVisitor);

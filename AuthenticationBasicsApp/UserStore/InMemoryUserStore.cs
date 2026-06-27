@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Identity;
 namespace AuthenticationBasicsApp.UserStore;
 
 public class InMemoryUserStore :
-    IUserStore<IdentityUser>,
     IUserPasswordStore<IdentityUser>,
     IUserRoleStore<IdentityUser>,
     IUserClaimStore<IdentityUser>
@@ -16,7 +15,6 @@ public class InMemoryUserStore :
 
     public Task<IdentityResult> CreateAsync(IdentityUser user, CancellationToken ct)
     {
-        user.Id ??= Guid.NewGuid().ToString();
         Users[user.Id] = user;
         return Task.FromResult(IdentityResult.Success);
     }
